@@ -131,6 +131,24 @@
   .neg { color: #A32D2D; font-weight: 700; }
 
   .banner { margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 700; text-align: center; }
+
+  .print-btn {
+    display: block; margin: 16px auto 0; padding: 10px 20px;
+    border: none; border-radius: 8px; background: #3B6D11; color: #fff;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .print-btn:hover { background: #2F5A0D; }
+  .print-only { display: none; }
+
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .print-only { display: block; }
+    .print-header { margin-bottom: 14px; }
+    .print-header-title { font-size: 18px; font-weight: 700; }
+    #print-date { font-size: 12px; color: #555; margin-top: 2px; }
+    .section { break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
@@ -139,7 +157,7 @@
   <p class="subtitle">計画 → 配分 → 実績 → クリア判定 がすべて連動します</p>
 
   <!-- 使い方・ゲーム仕様 -->
-  <div class="section">
+  <div class="section no-print">
     <div class="section-label">はじめに</div>
     <div class="panel">
       <p style="font-size:13px; font-weight:700; margin-bottom:8px;">使い方（上から順に入力するだけ）</p>
@@ -149,6 +167,7 @@
         <li><b>初期残高</b>：今持っている貯金を最初に一度だけ入れる</li>
         <li><b>目標額</b>：各貯金箱の目標を決める（貯金箱カードかクリア判定表のどちらでも）</li>
         <li><b>予実管理</b>：月が進んだら、経過月数と実績の累計を更新する</li>
+        <li><b>年次更新</b>：年度が変わったら①その時点の残高を各貯金箱の初期残高欄に入れ直す→②年間計画を来年度の数字に更新する→③経過月数・実績欄を空にする、の順でリセットして次の年の挑戦を始める</li>
       </ol>
       <p style="font-size:13px; font-weight:700; margin-bottom:8px;">ゲームのルール</p>
       <ul style="font-size:13px; color:#555; line-height:1.8; padding-left:20px; margin-bottom:16px;">
@@ -261,6 +280,10 @@
   <div class="section">
     <div class="section-label">6. クリア判定</div>
     <div class="panel">
+      <div class="print-only print-header">
+        <div class="print-header-title">年度末決算</div>
+        <div id="print-date"></div>
+      </div>
       <p class="hint">現在の残高 ＝ 初期残高 ＋ 実績利益の配分。黒字なら配分割合どおり各貯金箱に積み上がり、赤字なら内部留保がその赤字を吸収します。判定は常に「現在の残高 ÷ 目標額が100%以上か」で決まります。</p>
       <table class="data-table">
         <thead>
@@ -269,6 +292,7 @@
         <tbody id="clear-body"></tbody>
       </table>
       <div id="clear-banner" class="banner"></div>
+      <button type="button" class="print-btn no-print" onclick="window.print()">🖨 年度末決算を印刷する</button>
     </div>
   </div>
 </div>
@@ -406,6 +430,9 @@ function syncGoalInputs(id) {
 
 // ═══════════════ 初回構築（入力欄は一度だけ作る） ═══════════════
 function build() {
+  document.getElementById('print-date').textContent =
+    new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) + ' 時点';
+
   // 計画
   document.getElementById('plan-revenue').value = S.planRevenue;
   document.getElementById('plan-cost').value    = S.planCost;
