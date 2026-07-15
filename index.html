@@ -154,7 +154,7 @@
       <ul style="font-size:13px; color:#555; line-height:1.8; padding-left:20px; margin-bottom:16px;">
         <li>🎉 <b>クリア</b>：目標を設定したすべての貯金箱が目標額に到達する</li>
         <li>💀 <b>ゲームオーバー</b>：内部留保が0以下になる</li>
-        <li>貯金箱（設備・内装・試す）は<b>一度到達したら達成のまま</b>。使って減っても未達に戻らない（貯金は使うためのもの）</li>
+        <li>達成判定は常に<b>その時点の残高 ÷ 目標額が100%以上か</b>で決まる。使って残高が目標未満に減れば未達に戻る</li>
         <li>内部留保だけは<b>常に目標を維持</b>している必要がある（守りの貯金）</li>
         <li>実績が黒字なら配分どおり各貯金箱に積み上がり、<b>赤字なら内部留保が全額吸収</b>する</li>
       </ul>
@@ -261,7 +261,7 @@
   <div class="section">
     <div class="section-label">6. クリア判定</div>
     <div class="panel">
-      <p class="hint">現在の残高 ＝ 初期残高 ＋ 実績利益の配分。黒字なら配分割合どおり各貯金箱に積み上がり、赤字なら内部留保がその赤字を吸収します。貯金箱（設備・内装・試す）は一度目標に到達すれば「達成」のままです。</p>
+      <p class="hint">現在の残高 ＝ 初期残高 ＋ 実績利益の配分。黒字なら配分割合どおり各貯金箱に積み上がり、赤字なら内部留保がその赤字を吸収します。判定は常に「現在の残高 ÷ 目標額が100%以上か」で決まります。</p>
       <table class="data-table">
         <thead>
           <tr><th></th><th>目標額</th><th>初期残高</th><th>実績の積立</th><th>現在の残高</th><th>判定</th></tr>
@@ -284,9 +284,9 @@ const DEFAULTS = {
   actRevenue: '',
   actCost: '',
   buckets: {
-    equipment: { pct: 20, goal: 10, initial: 0, achievedOnce: false },
-    interior:  { pct: 15, goal: 8,  initial: 0, achievedOnce: false },
-    trial:     { pct: 10, goal: 0,  initial: 0, achievedOnce: false },
+    equipment: { pct: 20, goal: 10, initial: 0 },
+    interior:  { pct: 15, goal: 8,  initial: 0 },
+    trial:     { pct: 10, goal: 0,  initial: 0 },
     reserve:   { goal: 0, initial: 0 },
   },
 };
@@ -385,11 +385,6 @@ function onPct(id, val) {
 
 function onGoal(id, val) {
   S.buckets[id].goal = num(val);
-  // 目標を上げ直したら達成フラグをリセット（新たな挑戦として扱う）
-  const c = compute();
-  if (S.buckets[id].achievedOnce !== undefined && c.balance[id] < S.buckets[id].goal) {
-    S.buckets[id].achievedOnce = false;
-  }
   save();
   syncGoalInputs(id);
   render();
@@ -611,13 +606,7 @@ function render() {
     const goal = num(b.goal);
     const isReserve = m.id === 'reserve';
 
-    // 到達フラグ更新（貯金箱のみ）
-    if (!isReserve && goal > 0 && bal >= goal && !b.achievedOnce) {
-      b.achievedOnce = true;
-      save();
-    }
-
-    const met = isReserve ? (goal > 0 && bal >= goal) : !!b.achievedOnce;
+    const met = goal > 0 && bal >= goal;
     if (goal > 0) { anyGoalSet = true; if (!met) allClear = false; }
 
     document.getElementById('init-' + m.id).textContent    = fmt(num(b.initial));
